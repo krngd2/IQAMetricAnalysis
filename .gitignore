@@ -1,0 +1,7 @@
+__pycache__
+*.DS_STORE 
+*.csv
+LIVE_MD
+BAPPS
+results
+IQA_Analysis_Report_with_Time.md
