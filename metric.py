@@ -29,7 +29,6 @@ from skimage.metrics import structural_similarity
 import warnings
 warnings.filterwarnings('ignore')
 
-# Try to import optional dependencies
 try:
     import cv2
     CV2_AVAILABLE = True
@@ -220,7 +219,7 @@ def ms_ssim(img1, img2, weights=None, data_range=1.0) -> float:
     ms_ssim_val = np.clip(ms_ssim_val, 0, 1)
     return float(ms_ssim_val)
 
-def _ssim_single_scale(img1, img2, full=False): # -> Union[float, Tuple[float, float]] - Internal helper
+def _ssim_single_scale(img1, img2, full=False):
     """Helper function for single-scale SSIM computation"""
     mu1 = cv2.GaussianBlur(img1, (11, 11), 1.5) if CV2_AVAILABLE else img1
     mu2 = cv2.GaussianBlur(img2, (11, 11), 1.5) if CV2_AVAILABLE else img2
@@ -257,9 +256,7 @@ def vif(img1, img2) -> float:
         img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
     
     sigma_nsq = 0.1
-    
-    # VIF calculation using steerable pyramid
-    # Simplified implementation
+     
     mu1 = img1.mean()
     mu2 = img2.mean()
     sigma1_sq = np.var(img1)
@@ -273,7 +270,6 @@ def vif(img1, img2) -> float:
         return 0.0
     
     vif_val = np.log2(1 + g**2 * sigma1_sq / (sv_sq + sigma_nsq)) / np.log2(1 + sigma1_sq / sigma_nsq)
-    # VIF can be >1, normalize to [0,1] (typical range 0-1, but clip just in case)
     vif_val = np.clip(vif_val, 0, 1)
     return float(vif_val)
 
@@ -288,14 +284,12 @@ def mad(img1, img2) -> float:
         img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
     if img2.ndim == 3:
         img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
-    
-    # Simplified MAD using local variance
+     
     kernel = np.ones((8, 8)) / 64
     local_var1 = ndimage.convolve(img1**2, kernel) - ndimage.convolve(img1, kernel)**2
     local_var2 = ndimage.convolve(img2**2, kernel) - ndimage.convolve(img2, kernel)**2
     
     mad_val = np.mean(np.abs(local_var1 - local_var2))
-    # MAD can be >1, normalize to [0,1] (typical range 0-1 for [0,1] images)
     mad_val = np.clip(mad_val, 0, 1)
     return float(mad_val)
 
@@ -311,15 +305,12 @@ def fsim(img1, img2) -> float:
     if img2.ndim == 3:
         img2 = np.mean(img2, axis=2)
     
-    # Phase congruency calculation
     pc1 = _phase_congruency(img1)
     pc2 = _phase_congruency(img2)
     
-    # Gradient magnitude
     gm1 = np.sqrt(filters.sobel_h(img1)**2 + filters.sobel_v(img1)**2)
     gm2 = np.sqrt(filters.sobel_h(img2)**2 + filters.sobel_v(img2)**2)
     
-    # Similarity measures
     T1, T2 = 0.85, 160
     
     PCm = np.maximum(pc1, pc2)
@@ -332,14 +323,12 @@ def fsim(img1, img2) -> float:
     if np.sum(PCm_norm) > 0:
         score = np.sum(S_l * PCm_norm) / np.sum(PCm_norm)
     else:
-        score = 0
-    # FSIM is in [0,1], ensure clamped
+        score = 0 
     score = np.clip(score, 0, 1)
     return float(score)
 
-def _phase_congruency(img): # -> np.ndarray - Internal helper
+def _phase_congruency(img):
     """Simplified phase congruency calculation"""
-    # Using gradient-based approximation
     gx = filters.sobel_h(img)
     gy = filters.sobel_v(img)
     return np.sqrt(gx**2 + gy**2)
@@ -356,15 +345,12 @@ def gmsd(img1, img2) -> float:
     if img2.ndim == 3:
         img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
     
-    # Calculate gradient magnitudes
     gm1 = np.sqrt(filters.sobel_h(img1)**2 + filters.sobel_v(img1)**2)
     gm2 = np.sqrt(filters.sobel_h(img2)**2 + filters.sobel_v(img2)**2)
     
-    # Gradient magnitude similarity
     c = 0.0026
     gms = (2 * gm1 * gm2 + c) / (gm1**2 + gm2**2 + c)
     
-    # Standard deviation of GMS
     gmsd_val = np.std(gms)
     # GMSD: lower is better, map to similarity [0,1] using exp decay (typical max ~0.5)
     gmsd_val = np.exp(-gmsd_val * 10)
@@ -551,7 +537,7 @@ def brisque(img) -> float:
     brisque_val = 1.0 - np.clip(quality_score, 0, 100) / 100.0
     return float(brisque_val)
 
-def _estimate_ggd_param(data): # -> float - Internal helper
+def _estimate_ggd_param(data):
     """Estimate GGD parameter using method of moments"""
     sigma_sq = np.var(data)
     mean_abs = np.mean(np.abs(data))
@@ -836,7 +822,7 @@ def evaluate_all_metrics(img1, img2=None, include_no_ref=True) -> dict:
     
     return results
 
-def print_metrics_summary(): # -> None
+def print_metrics_summary(): 
     """Print a summary of all implemented metrics"""
     
     print("=" * 80)
